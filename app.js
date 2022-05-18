@@ -2,7 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
-const { render } = require("express/lib/response");
+const encrypt = require('mongoose-encryption');
 
 const app = express();
 
@@ -20,13 +20,17 @@ async function main() {
     await mongoose.connect("mongodb://localhost:27017/userDB");
 
     //create schema
-    const userSchema ={
+    const userSchema = new mongoose.Schema({
         email : String,
         pwd: String
-    }
+    });
+
+    //encrypt the password
+    const secret = "secretSecret";
+    userSchema.plugin(encrypt, { secret: secret, encryptedFields: ['pwd']});
 
     //create model
-    const User = mongoose.model("User", userSchema);
+    const User = new mongoose.model("User", userSchema);
 
     app.get("/",(req,res)=>{
         res.render("home");
