@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
@@ -12,6 +13,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 //collect all the static file
 app.use(express.static("public"));
 
+
 //connect to mongoDB server on port 27017 in blogDB
 main().catch(err => console.log(err));
 
@@ -25,9 +27,7 @@ async function main() {
         pwd: String
     });
 
-    //encrypt the password
-    const secret = "secretSecret";
-    userSchema.plugin(encrypt, { secret: secret, encryptedFields: ['pwd']});
+    userSchema.plugin(encrypt, { secret: process.env.SECRET, encryptedFields: ['pwd']});
 
     //create model
     const User = new mongoose.model("User", userSchema);
