@@ -3,7 +3,10 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
-const encrypt = require('mongoose-encryption');
+// const encrypt = require('mongoose-encryption');
+// const md5 = require('md5');
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 const app = express();
 
@@ -27,7 +30,7 @@ async function main() {
         pwd: String
     });
 
-    userSchema.plugin(encrypt, { secret: process.env.SECRET, encryptedFields: ['pwd']});
+    // userSchema.plugin(encrypt, { secret: process.env.SECRET, encryptedFields: ['pwd']});
 
     //create model
     const User = new mongoose.model("User", userSchema);
@@ -45,18 +48,21 @@ async function main() {
     })
 
     app.post("/register", (req,res)=>{
-        const newUser = User({
-            email: req.body.username,
-            pwd: req.body.password
-        });
-
-        newUser.save((err)=>{
-            if(err){
-                console.log(err);
-            }else{
-                //go to secrets page after login
-                res.render("secrets");
-            }
+        bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
+            const newUser = User({
+                email: req.body.username,
+                pwd: hash
+                //pwd: md5(req.body.password)
+            });
+    
+            newUser.save((err)=>{
+                if(err){
+                    console.log(err);
+                }else{
+                    //go to secrets page after login
+                    res.render("secrets");
+                }
+            });
         });
     });
 
@@ -69,9 +75,11 @@ async function main() {
                 console.log(err);
             }else{
                 if(foundUser){
-                    if(foundUser.pwd === pwd){
-                        res.render("secrets");
-                    }
+                    bcrypt.compare(pwd, foundUser.pwd, function(err, result) {
+                        if(result === true){
+                            res.render("secrets");
+                        }
+                    });
                 }
             }
         })
